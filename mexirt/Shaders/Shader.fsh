@@ -3,6 +3,7 @@ precision mediump float;
 uniform mat4 modelViewProjectionMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 inverseProjectionMatrix;
+uniform float time;
 varying vec2 ndc_position;
 
 vec3 expand(vec3 v) { return 0.5 * v + vec3(0.5); }
@@ -36,12 +37,41 @@ vec4 debug_color() { return vec4(1.0, 0.0, 0.0, 1.0); }
 vec4 debug_vector(vec3 v) { return color(expand(v)); }
 vec4 debug_vector(vec2 v) { return color(expand(vec3(v, 0.0))); }
 
+struct Sphere {
+  vec3 _centre;
+  float _radius;
+};
+
+bool intersects(Ray ray, Sphere sphere)
+{
+  float a = dot(ray._direction, ray._direction);
+  vec3 l = ray._origin - sphere._centre;
+  float b = 2.0 * dot(ray._direction, l); 
+  float c = dot(l,l) - sphere._radius * sphere._radius;
+  float discriminant = b*b - 4.0 * a * c;
+
+  return discriminant > 3.0e-5;
+} 
+
+vec4 trace_scene(Ray ray, Sphere s)
+{  
+  if (intersects(ray, s)) {
+    return vec4(1.0);
+  } else {
+    return vec4(0.0, 0.0, 0.0, 1.0);
+  }
+}
+
 void main()
 {
   Transform camera_to_ndc = Transform(projectionMatrix, inverseProjectionMatrix);
 
-  Ray myRay = camera_ray(ndc_position, camera_to_ndc);
+  Ray trace_ray = camera_ray(ndc_position, camera_to_ndc);
 
-  gl_FragColor = debug_vector(myRay._direction.xy);
+  Sphere s = Sphere(vec3(cos(time), sin(time), -10.0), 1.0);
+
+  gl_FragColor = trace_scene(trace_ray, s);
+
+    //gl_FragColor = debug_vector(myRay._direction.xy);
   //  gl_FragColor = debug_color();
 }
