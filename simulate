@@ -1,0 +1,8 @@
+#!/bin/bash
+XCODE_APP=/Applications/Xcode.app
+SIMULATOR_APP="$XCODE_APP/Contents/Applications/iPhone\ Simulator.app"
+SIMULATOR="$SIMULATOR_APP/Contents/MacOS/iPhone\ Simulator"
+
+./xbuild Debug
+
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone\ Simulator.app/Contents/MacOS/iPhone\ Simulator -SimulateApplication build/Debug-iphonesimulator/mexirt.app/mexirt
