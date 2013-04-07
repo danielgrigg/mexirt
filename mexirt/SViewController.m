@@ -14,8 +14,10 @@
 enum
 {
     UNIFORM_MODELVIEWPROJECTION_MATRIX,
-    NUM_UNIFORMS
-};
+    UNIFORM_PROJECTION_MATRIX,
+    UNIFORM_INVERSE_PROJECTION_MATRIX,
+    NUM_UNIFORMS};
+
 GLint uniforms[NUM_UNIFORMS];
 
 // Attribute index.
@@ -41,6 +43,8 @@ GLfloat screenVertexData[] =
     GLuint _program;
     
     GLKMatrix4 _modelViewProjectionMatrix;    
+    GLKMatrix4 _projectionMatrix;
+    GLKMatrix4 _inverseProjectionMatrix;
     GLuint _vertexArray;
     GLuint _vertexBuffer;
 
@@ -142,8 +146,10 @@ GLfloat screenVertexData[] =
 - (void)update
 {
     float aspect = fabsf(self.view.bounds.size.width / self.view.bounds.size.height);
-    GLKMatrix4 projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(40.0f), aspect, 0.1f, 100.0f);
-    
+    _projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(70.0f), aspect, 0.1f, 100.0f);
+    bool invertible;
+    _inverseProjectionMatrix = GLKMatrix4Invert(_projectionMatrix, &invertible);
+
     GLKMatrix4 baseModelViewMatrix = GLKMatrix4MakeTranslation(0.0f, -0.0f, -10.0f);
     //    baseModelViewMatrix = GLKMatrix4Rotate(baseModelViewMatrix, _rotation, 0.0f, 1.0f, 0.0f);
     
@@ -151,21 +157,23 @@ GLfloat screenVertexData[] =
     //    modelViewMatrix = GLKMatrix4Rotate(modelViewMatrix, _rotation, 1.0f, 1.0f, 1.0f);
     modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
     
-    _modelViewProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
+    _modelViewProjectionMatrix = GLKMatrix4Multiply(_projectionMatrix, modelViewMatrix);
     
     _rotation += self.timeSinceLastUpdate * 0.5f;
 }
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect
 {
-    glClearColor(0.65f, 0.65f, 0.65f, 1.0f);
+    glClearColor(1.0f, 0.5f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);// | GL_DEPTH_BUFFER_BIT);
     
     glBindVertexArrayOES(_vertexArray);
  
     glUseProgram(_program);
     
-    glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, _modelViewProjectionMatrix.m);    
+    glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, _modelViewProjectionMatrix.m);
+    glUniformMatrix4fv(uniforms[UNIFORM_PROJECTION_MATRIX], 1, 0, _projectionMatrix.m);    
+    glUniformMatrix4fv(uniforms[UNIFORM_INVERSE_PROJECTION_MATRIX], 1, 0, _inverseProjectionMatrix.m);    
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
@@ -226,7 +234,8 @@ GLfloat screenVertexData[] =
     
     // Get uniform locations.
     uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX] = glGetUniformLocation(_program, "modelViewProjectionMatrix");
-    
+    uniforms[UNIFORM_PROJECTION_MATRIX] = glGetUniformLocation(_program, "projectionMatrix");
+    uniforms[UNIFORM_INVERSE_PROJECTION_MATRIX] = glGetUniformLocation(_program, "inverseProjectionMatrix");    
     // Release vertex and fragment shaders.
     if (vertShader) {
         glDetachShader(_program, vertShader);

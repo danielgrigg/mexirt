@@ -1,7 +1,8 @@
 attribute vec4 position;
-uniform mat4 modelViewProjectionMatrix;
+varying lowp vec2 ndc_position;
 
 void main()
 {
-    gl_Position = position;
+  ndc_position = vec2(position);
+  gl_Position = position;
 }
